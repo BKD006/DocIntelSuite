@@ -8,11 +8,9 @@ from fastapi.templating import Jinja2Templates
 from typing import Dict, List, Any, Optional
 from utils.document_ops import FastAPIFileAdapter, read_pdf_via_handler
 
-from src.document_ingestion.data_ingestion import (
-    DocHandler,
-    DocumentComparator,
-    ChatIngestor
-)
+from src.document_ingestion.rag_ingestor import RAGIngestor
+from src.document_ingestion.document_handler import DocHandler
+from src.document_ingestion.document_comparator import DocumentComparator
 from src.document_analyzer.data_analysis import DocumentAnalyzer
 from src.document_compare.doc_compare import DocumentCompareLLM
 from src.document_chat.retrieval import ConversationalRAG
@@ -100,13 +98,13 @@ async def build_chat_index(
     try:
         log.info(f"Indexing chat session. Session ID: {session_id}, Files: {[f.filename for f in files]}")
         wrapped= [FastAPIFileAdapter(f) for f in files]
-        ci= ChatIngestor(
+        ci= RAGIngestor(
             temp_base=UPLOAD_BASE,
             faiss_base=FAISS_BASE,
             use_session_dirs= use_session_dirs,
             session_id=session_id or None
         )
-        # NOTE: ensure your ChatIngestor saves with index_name="index" or FAISS_INDEX_NAME
+        # NOTE: ensure your RAGIngestor saves with index_name="index" or FAISS_INDEX_NAME
         ci.built_retriever(wrapped, chunk_size=chunk_size, chunk_overlap=chunk_overlap, k=k)
         log.info(f"Index created successfully for session: {ci.session_id}")
         return {"session_id": ci.session_id, "k":k, "use_session_dirs": use_session_dirs}
